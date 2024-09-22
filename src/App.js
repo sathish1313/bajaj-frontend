@@ -1,24 +1,26 @@
 import React, { useState } from "react";
 import axios from "axios";
+import Select from "react-select";
+import './App.css'; // For custom styles
 
 function App() {
   const [jsonInput, setJsonInput] = useState("");
-  const [file, setFile] = useState(null);
   const [response, setResponse] = useState(null);
   const [error, setError] = useState(null);
   const [selectedOptions, setSelectedOptions] = useState([]);
+
+  const filterOptions = [
+    { value: "numbers", label: "Numbers" },
+    { value: "alphabets", label: "Alphabets" },
+    { value: "highest_lowercase_alphabet", label: "Highest Lowercase Alphabet" },
+  ];
 
   const handleJsonChange = (e) => {
     setJsonInput(e.target.value);
   };
 
-  const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
-  };
-
-  const handleDropdownChange = (e) => {
-    const options = Array.from(e.target.selectedOptions, (option) => option.value);
-    setSelectedOptions(options);
+  const handleDropdownChange = (selected) => {
+    setSelectedOptions(selected);
   };
 
   const handleSubmit = async () => {
@@ -26,17 +28,14 @@ function App() {
       // Validate JSON input
       const jsonData = JSON.parse(jsonInput);
 
-      // Convert file to Base64
-      const fileBase64 = file ? await toBase64(file) : null;
-
       // Prepare request body
       const requestBody = {
         data: jsonData.data,
-        file_b64: fileBase64 || ""
       };
 
-      const result = await axios.post("https://your-backend-url.com/bfhl", requestBody);
+      const result = await axios.post("https://bajaj-backend-e6k46xext-sathishs-projects-37aa0aa2.vercel.app/bfhl", requestBody);
       setResponse(result.data);
+      console.log(result);
       setError(null);
     } catch (err) {
       setError("Invalid JSON or API request failed");
@@ -44,31 +43,24 @@ function App() {
     }
   };
 
-  const toBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result.split(",")[1]); // Split out Base64 portion
-      reader.onerror = (error) => reject(error);
-    });
-  };
-
   const renderResponse = () => {
     if (!response) return null;
 
     let displayData = {};
-    if (selectedOptions.includes("Numbers")) {
-      displayData.numbers = response.numbers;
-    }
-    if (selectedOptions.includes("Alphabets")) {
-      displayData.alphabets = response.alphabets;
-    }
-    if (selectedOptions.includes("Highest Lowercase Alphabet")) {
-      displayData.highestLowercaseAlphabet = response.highest_lowercase_alphabet;
-    }
+    selectedOptions.forEach((option) => {
+      if (option.value === "numbers") {
+        displayData.numbers = response.numbers;
+      }
+      if (option.value === "alphabets") {
+        displayData.alphabets = response.alphabets;
+      }
+      if (option.value === "highest_lowercase_alphabet") {
+        displayData.highest_lowercase_alphabet = response.highest_lowercase_alphabet;
+      }
+    });
 
     return (
-      <div>
+      <div className="response-box">
         <h3>Response:</h3>
         <pre>{JSON.stringify(displayData, null, 2)}</pre>
       </div>
@@ -76,33 +68,35 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <h1>JSON Input Form</h1>
-      
-      <textarea
-        value={jsonInput}
-        onChange={handleJsonChange}
-        placeholder='Enter JSON like {"data": ["M", "1", "2"]}'
-        rows="8"
-        cols="50"
-      />
-      <br />
-      
-      <input type="file" onChange={handleFileChange} />
-      <br />
+    <div className="app-container">
+      <div className="form-container">
+        <h1>JSON Input Form</h1>
+        
+        <textarea
+          value={jsonInput}
+          onChange={handleJsonChange}
+          placeholder='Enter JSON like {"data": ["M", "1", "2"]}'
+          rows="8"
+          cols="50"
+        />
+        <br />
 
-      <label htmlFor="responseSelect">Select Response Options:</label>
-      <select multiple={true} id="responseSelect" onChange={handleDropdownChange}>
-        <option value="Numbers">Numbers</option>
-        <option value="Alphabets">Alphabets</option>
-        <option value="Highest Lowercase Alphabet">Highest Lowercase Alphabet</option>
-      </select>
-      <br />
+        <label htmlFor="responseSelect">Select Response Options:</label>
+        <Select
+          isMulti
+          options={filterOptions}
+          value={selectedOptions}
+          onChange={handleDropdownChange}
+          className="multi-select"
+          placeholder="Select options"
+        />
+        <br />
 
-      <button onClick={handleSubmit}>Submit</button>
+        <button onClick={handleSubmit} className="submit-btn">Submit</button>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
-      {renderResponse()}
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        {renderResponse()}
+      </div>
     </div>
   );
 }
